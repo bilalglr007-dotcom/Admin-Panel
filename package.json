@@ -1,15 +1,16 @@
 {
   "name": "admin-panel",
   "version": "1.0.0",
-  "description": "",
-  "main": "app.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
+  "private": true,
   "type": "module",
+  "scripts": {
+    "start": "node ./bin/www"
+  },
   "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "debug": "^4.4.3",
     "express": "^5.2.1",
-    "mongoose": "^9.7.4"
+    "mongoose": "^9.7.4",
+    "morgan": "^1.11.0"
   }
 }
