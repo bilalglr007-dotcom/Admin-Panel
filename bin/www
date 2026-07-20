@@ -1,25 +1,20 @@
 #!/usr/bin/env node
 
-// Bağımlılıkların projeye dahil edilmesi
-import app from '../app.js'; // Projenin ana Express dosyası (.js uzantısı zorunludur)
+import app from '../app.js';
 import createDebug from 'debug';
 import http from 'http';
 
 const debug = createDebug('admin-panel:server');
 
-// Port bilgisinin ortam değişkenlerinden alınması veya varsayılan olarak 3000 atanması
 const port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
 
-// HTTP sunucusunun oluşturulması
 const server = http.createServer(app);
 
-// Sunucunun belirtilen portu dinlemeye başlaması ve olay yakalayıcıların tanımlanması
 server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
 
-// Port bilgisini sayıya, metne veya mantıksal değere dönüştüren yardımcı fonksiyon
 function normalizePort(val) {
   const port = parseInt(val, 10);
 
@@ -34,17 +29,13 @@ function normalizePort(val) {
   return false;
 }
 
-// Sunucu başlatılırken oluşabilecek hataları yakalayan fonksiyon
 function onError(error) {
   if (error.syscall !== 'listen') {
     throw error;
   }
 
-  const bind = typeof port === 'string'
-    ? 'Pipe ' + port
-    : 'Port ' + port;
+  const bind = typeof port === 'string' ? 'Pipe ' + port : 'Port ' + port;
 
-  // Belirli port hatalarına karşı kullanıcıya anlaşılır mesajlar gösterilmesi
   switch (error.code) {
     case 'EACCES':
       console.error(bind + ' yüksek yetki gerektiriyor.');
@@ -59,11 +50,8 @@ function onError(error) {
   }
 }
 
-// Sunucu başarıyla ayağa kalktığında çalışan fonksiyon
 function onListening() {
   const addr = server.address();
-  const bind = typeof addr === 'string'
-    ? 'pipe ' + addr
-    : 'port ' + addr.port;
+  const bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr.port;
   debug('Dinleniyor: ' + bind);
 }
