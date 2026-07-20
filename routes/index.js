@@ -5,7 +5,7 @@ const router = express.Router();
 
 
 router.get('/', (req, res, next) => {
-  res.json({ title: 'Express' });
+  res.json({ Message: 'Hoşgeldiniz...' });
 });
 
 router.get('/config-test',(req, res, next)=>
