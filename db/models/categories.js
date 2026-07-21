@@ -15,7 +15,8 @@ const categoriesSchema = new mongoose.Schema
     ref: 'Users'
     }
    }, {
-    timestamps: true 
+    timestamps: true,
+    versionKey: false 
 })
 const Categories = mongoose.model('Categories',categoriesSchema)
 export default Categories

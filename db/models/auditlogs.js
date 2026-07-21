@@ -17,7 +17,8 @@ const auditlogs = new mongoose.Schema
         type: String
     },
    }, {
-    timestamps: true
+    timestamps: true,
+    versionKey: false
 })
 const Audit_Logs = mongoose.model('Audit_Logs',auditlogs)
 export default Audit_Logs

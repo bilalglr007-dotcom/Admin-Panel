@@ -28,7 +28,8 @@ const usersSchema = new mongoose.Schema
         sparse: true
     }
    }, {
-    timestamps: true     
+    timestamps: true,
+    versionKey: false     
 })
 const Users = mongoose.model('Users',usersSchema)
 export default Users

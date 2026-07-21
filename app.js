@@ -5,6 +5,11 @@ import cookieParser from 'cookie-parser';
 import logger from 'morgan';
 import indexRouter from './routes/index.js';
 import usersRouter from './routes/users.js';
+import roles from './routes/roles.js';
+import userRoles from './routes/userRoles.js';
+import rolePrivileges from './routes/rolePrivileges.js';
+import categories from './routes/categories.js';
+import auditlogs from './routes/auditlogs.js';
 import connectDB from './db/database.js';
 connectDB()
 const app = express();
@@ -20,6 +25,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use('/roles',roles);
+app.use('/user-roles',userRoles);
+app.use('/role-privileges',rolePrivileges);
+app.use('/audit-logs',auditlogs);
+app.use('/categories',categories);
 
 app.use((req, res, next) => {
     const error = new Error('İstediğiniz API rotası bulunamadı.');

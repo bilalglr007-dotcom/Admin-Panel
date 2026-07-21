@@ -10,8 +10,8 @@ const usersRolesSchema = new mongoose.Schema
         ref: 'Users'
     }
    }, {
-    timestamps: true  
-
+    timestamps: true,
+    versionKey: false  
 })
 const User_Roles = mongoose.model('UserRoles',usersRolesSchema)
 export default User_Roles

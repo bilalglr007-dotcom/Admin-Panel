@@ -13,7 +13,8 @@ const rolePrivilegesSchema = new mongoose.Schema
         ref: 'Users'
     }
    }, {
-    timestamps: true
+    timestamps: true,
+    versionKey: false
 })
 const Role_Privileges = mongoose.model('RolePrivileges',rolePrivilegesSchema)
 export default Role_Privileges
