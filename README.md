@@ -1,1 +1,1 @@
-# Bu projeyi çalıştırmak için ana dizinde bir .env dosyası oluşturup içine CONNECTION_STRING ve LOG_LEVEL değerlerini girmeniz gerekir.
+
