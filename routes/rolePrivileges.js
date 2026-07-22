@@ -1,11 +1,14 @@
-import RolePrivileges from '../db/models/rolePrivileges.js'
-import express from 'express'
-const router = express.Router()
+import Audit from '../lib/audit.js';
+import RolePrivileges from '../db/models/rolePrivileges.js';
+import express from 'express';
+import mongoose from 'mongoose';
+const router = express.Router();
 
 router.post('/', async (req, res, next) =>
 {
   try {
     const addRolePrivileges = await RolePrivileges.create(req.body)
+    await Audit.log({level:'INFO',email:'admin@info.com',location:'ROLE_PRIVILEGES',proc_type:'POST',log:`Yeni Rol-Yetki İlişkisi Tanımlandı -> Role ID: ${addRolePrivileges.role_id}, Permission: ${addRolePrivileges.permission}`})
     res.status(201).json({success: true, data: addRolePrivileges})
   } catch (err) {
     next(err)
@@ -32,7 +35,10 @@ router.get('/:id',async (req,res,next) =>
 router.put('/:id',async (req,res,next) =>
 {
   try {
+    const currentRolePrivileges = await RolePrivileges.findById(req.params.id)
     const RolePrivilegesUpdate = await RolePrivileges.findByIdAndUpdate(req.params.id, req.body, {returnDocument: 'after'})
+    const updatedFields = Object.keys(req.body).join(', ')
+    await Audit.log({level:'INFO',email:'admin@info.com',location:'ROLE_PRIVILEGES',proc_type:'PUT',log:`Rol-Yetki İlişkisinin Şu Alanları Güncellendi: ${updatedFields}`})
     res.status(200).json({success: true, data: RolePrivilegesUpdate})
   } catch (err) {
     next(err)
@@ -41,10 +47,12 @@ router.put('/:id',async (req,res,next) =>
 router.delete('/:id',async (req,res,next) =>
 {
   try {
-    const  RolePrivilegesDelete = await RolePrivileges.findByIdAndDelete(req.params.id)
+    const RolePrivilegesDelete = await RolePrivileges.findByIdAndDelete(req.params.id)
+    await Audit.log({level:'INFO', email:'admin@info.com', location: 'ROLE_PRIVILEGES', proc_type: 'DELETE', log:`Rol-Yetki İlişkisi Silindi! (ID: ${req.params.id})`})
     res.status(200).json({success: true, message: 'Rol-Yetki İlişkisi Başarıyla Silindi' })
   } catch (err) {
     next(err)
   }
 })
-export default router;    
+
+export default router;
