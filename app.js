@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import cookieParser from 'cookie-parser';
 import logger from 'morgan';
+import cors from 'cors';
 import indexRouter from './routes/index.js';
 import usersRouter from './routes/users.js';
 import roles from './routes/roles.js';
@@ -11,12 +12,14 @@ import rolePrivileges from './routes/rolePrivileges.js';
 import categories from './routes/categories.js';
 import auditlogs from './routes/auditlogs.js';
 import connectDB from './db/database.js';
-connectDB()
+
+connectDB();
 const app = express();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+app.use(cors());
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -25,16 +28,16 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
-app.use('/roles',roles);
-app.use('/user-roles',userRoles);
-app.use('/role-privileges',rolePrivileges);
-app.use('/audit-logs',auditlogs);
-app.use('/categories',categories);
+app.use('/roles', roles);
+app.use('/user-roles', userRoles);
+app.use('/role-privileges', rolePrivileges);
+app.use('/audit-logs', auditlogs);
+app.use('/categories', categories);
 
 app.use((req, res, next) => {
-    const error = new Error('İstediğiniz API rotası bulunamadı.');
-    error.status = 404;
-    next(error);
+  const error = new Error('İstediğiniz API rotası bulunamadı.');
+  error.status = 404;
+  next(error);
 });
 
 app.use((error, req, res, next) => {

@@ -1,54 +1,74 @@
 import Audit from '../lib/audit.js';
-import Categories from '../db/models/categories.js'
-import express from 'express'
-const router = express.Router()
+import Categories from '../db/models/categories.js';
+import express from 'express';
+import { authenticateToken, checkRole } from '../middlewares/authMiddleware.js';
 
-router.post('/', async (req, res, next) => {
+const router = express.Router();
+
+router.post('/', authenticateToken, checkRole('ADMIN'), async (req, res, next) => {
   try {
-    const addCategory = await Categories.create(req.body)
-    await Audit.log({level:'INFO',email:req.body.email,location:'CATEGORİES',proc_type:'POST',log:`${addCategory.name} Adında Bir Kategori Eklendi!`})
-    res.status(201).json({ success: true, data: addCategory })
+    const addCategory = await Categories.create(req.body);
+    await Audit.log({
+      level: 'INFO',
+      email: req.user.email,
+      location: 'CATEGORIES',
+      proc_type: 'POST',
+      log: `${addCategory.name} Adında Bir Kategori Eklendi!`
+    });
+    res.status(201).json({ success: true, data: addCategory });
   } catch (err) {
-    next(err)
+    next(err);
   }
-})
+});
 
-router.get('/', async (req, res, next) => {
+router.get('/', authenticateToken, async (req, res, next) => {
   try {
-    const findCategories = await Categories.find()
-    res.status(200).json({ success: true, data: findCategories })
+    const findCategories = await Categories.find();
+    res.status(200).json({ success: true, data: findCategories });
   } catch (err) {
-    next(err)
+    next(err);
   }
-})
+});
 
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', authenticateToken, async (req, res, next) => {
   try {
-    const categoryByDetail = await Categories.findById(req.params.id)
-    res.status(200).json({ success: true, data: categoryByDetail })
+    const categoryByDetail = await Categories.findById(req.params.id);
+    res.status(200).json({ success: true, data: categoryByDetail });
   } catch (err) {
-    next(err)
+    next(err);
   }
-})
+});
 
-router.put('/:id', async (req, res, next) => {
+router.put('/:id', authenticateToken, checkRole('ADMIN'), async (req, res, next) => {
   try {
-    const categoryUpdate = await Categories.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' })
-    await Audit.log({level:'INFO',email:req.body.email,location:'CATEGORİES',proc_type:'PUT',log:`${categoryUpdate.name} Adında Bir Kategori Güncellendi`})
-    res.status(200).json({ success: true, data: categoryUpdate })
+    const categoryUpdate = await Categories.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
+    await Audit.log({
+      level: 'INFO',
+      email: req.user.email,
+      location: 'CATEGORIES',
+      proc_type: 'PUT',
+      log: `${categoryUpdate.name} Adında Bir Kategori Güncellendi`
+    });
+    res.status(200).json({ success: true, data: categoryUpdate });
   } catch (err) {
-    next(err)
+    next(err);
   }
-})
+});
 
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', authenticateToken, checkRole('ADMIN'), async (req, res, next) => {
   try {
-    const categoryDelete = await Categories.findByIdAndDelete(req.params.id)
-    await Audit.log({level:'INFO',email:req.body.email,location:'CATEGORİES',proc_type:'DELETE',log:`${categoryDelete.name} Adında Bir Kategori Silindi`})
-    res.status(200).json({ success: true, message: `${categoryDelete.name} Kategorisi Başarıyla Silindi`})
+    const categoryDelete = await Categories.findByIdAndDelete(req.params.id);
+    await Audit.log({
+      level: 'INFO',
+      email: req.user.email,
+      location: 'CATEGORIES',
+      proc_type: 'DELETE',
+      log: `${categoryDelete.name} Adında Bir Kategori Silindi`
+    });
+    res.status(200).json({ success: true, message: `${categoryDelete.name} Kategorisi Başarıyla Silindi` });
   } catch (err) {
-    next(err)
+    next(err);
   }
-})
+});
 
-export default router
+export default router;
