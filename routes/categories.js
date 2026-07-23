@@ -2,10 +2,11 @@ import Audit from '../lib/audit.js';
 import Categories from '../db/models/categories.js';
 import express from 'express';
 import { authenticateToken, checkRole } from '../middlewares/authMiddleware.js';
+import { cacheMiddleware, invalidateCache } from '../middlewares/cacheMiddleware.js';
 
 const router = express.Router();
 
-router.post('/', authenticateToken, checkRole('ADMIN'), async (req, res, next) => {
+router.post('/', authenticateToken, checkRole('SUPER_ADMIN'), invalidateCache(['categories:*', 'auditlogs:*']), async (req, res, next) => {
   try {
     const addCategory = await Categories.create(req.body);
     await Audit.log({
@@ -21,7 +22,7 @@ router.post('/', authenticateToken, checkRole('ADMIN'), async (req, res, next) =
   }
 });
 
-router.get('/', authenticateToken, async (req, res, next) => {
+router.get('/', authenticateToken, cacheMiddleware('categories'), async (req, res, next) => {
   try {
     const findCategories = await Categories.find();
     res.status(200).json({ success: true, data: findCategories });
@@ -30,7 +31,7 @@ router.get('/', authenticateToken, async (req, res, next) => {
   }
 });
 
-router.get('/:id', authenticateToken, async (req, res, next) => {
+router.get('/:id', authenticateToken, cacheMiddleware('categories'), async (req, res, next) => {
   try {
     const categoryByDetail = await Categories.findById(req.params.id);
     res.status(200).json({ success: true, data: categoryByDetail });
@@ -39,7 +40,7 @@ router.get('/:id', authenticateToken, async (req, res, next) => {
   }
 });
 
-router.put('/:id', authenticateToken, checkRole('ADMIN'), async (req, res, next) => {
+router.put('/:id', authenticateToken, checkRole('SUPER_ADMIN'), invalidateCache(['categories:*', 'auditlogs:*']), async (req, res, next) => {
   try {
     const categoryUpdate = await Categories.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
     await Audit.log({
@@ -55,7 +56,7 @@ router.put('/:id', authenticateToken, checkRole('ADMIN'), async (req, res, next)
   }
 });
 
-router.delete('/:id', authenticateToken, checkRole('ADMIN'), async (req, res, next) => {
+router.delete('/:id', authenticateToken, checkRole('SUPER_ADMIN'), invalidateCache(['categories:*', 'auditlogs:*']), async (req, res, next) => {
   try {
     const categoryDelete = await Categories.findByIdAndDelete(req.params.id);
     await Audit.log({
@@ -63,9 +64,9 @@ router.delete('/:id', authenticateToken, checkRole('ADMIN'), async (req, res, ne
       email: req.user.email,
       location: 'CATEGORIES',
       proc_type: 'DELETE',
-      log: `${categoryDelete.name} Adında Bir Kategori Silindi`
+      log: `${categoryDelete?.name || req.params.id} Adında Bir Kategori Silindi`
     });
-    res.status(200).json({ success: true, message: `${categoryDelete.name} Kategorisi Başarıyla Silindi` });
+    res.status(200).json({ success: true, message: `${categoryDelete?.name || 'Kategori'} Başarıyla Silindi` });
   } catch (err) {
     next(err);
   }
