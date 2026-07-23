@@ -1,8 +1,8 @@
-# 🚀 Node.js Admin Panel & Management API
+#  Node.js Admin Panel & Management API
 
 Bu proje; rol bazlı yetkilendirme (RBAC), JWT kimlik doğrulama, kategori yönetimi ve detaylı sistem denetim logları (Audit Logs) içeren modern ve güvenli bir **Admin Panel Backend API** servisidir.
 
-## 🛠️ Kullanılan Teknolojiler
+##  Kullanılan Teknolojiler
 
 * **Runtime:** Node.js
 * **Framework:** Express.js
@@ -12,17 +12,17 @@ Bu proje; rol bazlı yetkilendirme (RBAC), JWT kimlik doğrulama, kategori yöne
 
 ---
 
-## ✨ Temel Özellikler
+##  Temel Özellikler
 
-* 🔐 **JWT Tabanlı Kimlik Doğrulama:** Güvenli giriş/çıkış mimarisi.
-* 🛡️ **Rol Bazlı Yetkilendirme (RBAC):** `ADMIN` ve standart kullanıcı rollerine göre korunan API rotaları.
-* 📁 **Kategori Yönetimi:** Tam kapsamlı CRUD (Create, Read, Update, Delete) operasyonları.
-* 📜 **Audit Logging:** Sistemdeki kritik işlemleri (Ekleme, Güncelleme, Silme) işlemi yapan kullanıcının e-posta adresiyle birlikte otomatik kayıt altına alma.
-* 🌐 **CORS Desteği:** Frontend entegrasyonuna hazır mimari.
+*  **JWT Tabanlı Kimlik Doğrulama:** Güvenli giriş/çıkış mimarisi.
+*  **Rol Bazlı Yetkilendirme (RBAC):** `ADMIN` ve standart kullanıcı rollerine göre korunan API rotaları.
+*  **Kategori Yönetimi:** Tam kapsamlı CRUD (Create, Read, Update, Delete) operasyonları.
+*  **Audit Logging:** Sistemdeki kritik işlemleri (Ekleme, Güncelleme, Silme) işlemi yapan kullanıcının e-posta adresiyle birlikte otomatik kayıt altına alma.
+*  **CORS Desteği:** Frontend entegrasyonuna hazır mimari.
 
 ---
 
-## 🚀 Kurulum ve Çalıştırma
+##  Kurulum ve Çalıştırma
 
 Projeyi yerel ortamınızda çalıştırmak için aşağıdaki adımları takip edebilirsiniz:
 
