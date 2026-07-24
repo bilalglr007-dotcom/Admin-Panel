@@ -178,7 +178,7 @@ const DashboardPage = () => {
     ? Math.round(((thisMonthLogs - lastMonthLogs) / lastMonthLogs) * 100)
     : thisMonthLogs > 0 ? 100 : 0;
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (retryCount = 0) => {
     setLoading(true);
     try {
       const [usersRes, rolesRes, catsRes, logsRes] = await Promise.allSettled([
@@ -187,6 +187,12 @@ const DashboardPage = () => {
         categoriesAPI.getAll(),
         auditLogsAPI.getAll(),
       ]);
+
+      const isAnyRejected = [usersRes, rolesRes, catsRes, logsRes].some(r => r.status === 'rejected');
+      if (isAnyRejected && retryCount < 2) {
+        setTimeout(() => load(retryCount + 1), 300);
+        return;
+      }
 
       const users = usersRes.status === 'fulfilled' ? usersRes.value.data?.length || 0 : 0;
       const roles = rolesRes.status === 'fulfilled' ? rolesRes.value.data?.length || 0 : 0;
@@ -201,6 +207,8 @@ const DashboardPage = () => {
         return acc;
       }, {});
       setLogsByType(Object.entries(grouped).map(([name, value]) => ({ name, value })));
+    } catch (err) {
+      console.error('Dashboard yükleme hatası:', err);
     } finally {
       setLoading(false);
     }

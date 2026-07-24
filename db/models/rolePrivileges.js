@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+
 const rolePrivilegesSchema = new mongoose.Schema
 ({
     role_id:{
@@ -15,6 +16,9 @@ const rolePrivilegesSchema = new mongoose.Schema
    }, {
     timestamps: true,
     versionKey: false
-})
-const Role_Privileges = mongoose.model('RolePrivileges',rolePrivilegesSchema)
-export default Role_Privileges
+});
+
+rolePrivilegesSchema.index({ role_id: 1 });
+
+const Role_Privileges = mongoose.model('RolePrivileges', rolePrivilegesSchema);
+export default Role_Privileges;

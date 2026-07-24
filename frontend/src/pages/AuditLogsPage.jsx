@@ -2,7 +2,18 @@ import { useEffect, useState, useCallback } from 'react';
 import { auditLogsAPI } from '../api/index.js';
 import Toast from '../components/Toast';
 import Modal from '../components/Modal';
-import { ClipboardList, RefreshCw, Search, Trash2, Calendar, X } from 'lucide-react';
+import {
+  ClipboardList,
+  RefreshCw,
+  Search,
+  Trash2,
+  Calendar,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight
+} from 'lucide-react';
 
 const LEVEL_BADGE = {
   INFO:   { cls: 'badge-info', label: 'INFO' },
@@ -19,6 +30,10 @@ const PROC_COLORS = {
 const AuditLogsPage = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, totalCount: 0, totalPages: 1 });
+  const [stats, setStats] = useState({ total: 0, post: 0, delete: 0, login: 0 });
+
   const [search, setSearch] = useState('');
   const [filterLocation, setFilterLocation] = useState('');
   const [filterProc, setFilterProc] = useState('');
@@ -36,22 +51,42 @@ const AuditLogsPage = () => {
   const showToast = (m, t = 'success') => setToast({ message: m, type: t });
   const closeToast = () => setToast(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (targetPage = page) => {
     setLoading(true);
     try {
-      const res = await auditLogsAPI.getAll();
-      const logs = res.data || [];
-      // En yeni loglar en başta listelenecek şekilde sıralama
-      logs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      setData(logs);
+      const res = await auditLogsAPI.getAll({
+        page: targetPage,
+        limit: 10,
+        search,
+        location: filterLocation,
+        proc_type: filterProc,
+        startDate,
+        endDate
+      });
+
+      setData(res.data || []);
+      if (res.pagination) {
+        setPagination(res.pagination);
+      }
+      if (res.stats) {
+        setStats(res.stats);
+      }
     } catch (err) {
       showToast(err.message, 'error');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, search, filterLocation, filterProc, startDate, endDate]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load(page);
+  }, [page, load]);
+
+  // Filtreler değiştiğinde sayfayı 1 yapıp yeniden yükle
+  const handleFilterChange = (setter, val) => {
+    setter(val);
+    setPage(1);
+  };
 
   const handleDelete = async () => {
     setSaving(true);
@@ -59,7 +94,7 @@ const AuditLogsPage = () => {
       await auditLogsAPI.delete(selected._id);
       showToast('Log silindi!');
       setModal(null);
-      load();
+      load(page);
     } catch (err) {
       showToast(err.message, 'error');
     } finally {
@@ -70,6 +105,7 @@ const AuditLogsPage = () => {
   // Hazır Tarih Filtresi Seçimi (Bugün, Son 7 Gün vb.)
   const handlePresetChange = (preset) => {
     setDateRangePreset(preset);
+    setPage(1);
     const now = new Date();
 
     if (preset === 'today') {
@@ -109,32 +145,36 @@ const AuditLogsPage = () => {
     setStartDate('');
     setEndDate('');
     setDateRangePreset('all');
+    setPage(1);
   };
 
-  const locations = [...new Set(data.map(d => d.location).filter(Boolean))];
-  const procs = [...new Set(data.map(d => d.proc_type).filter(Boolean))];
+  const locations = ['AUTH', 'USERS', 'ROLES', 'USER_ROLES', 'ROLE_PRIVILEGES', 'CATEGORIES'];
+  const procs = ['POST', 'PUT', 'DELETE', 'LOGIN', 'REGISTER', 'GET'];
 
-  // Filtreleme Mantığı (Metin, Modül, İşlem & Tarih Aralığı)
-  const filtered = data.filter(d => {
-    const matchSearch = !search || `${d.email} ${d.log} ${d.location}`.toLowerCase().includes(search.toLowerCase());
-    const matchLoc = !filterLocation || d.location === filterLocation;
-    const matchProc = !filterProc || d.proc_type === filterProc;
+  const startItem = pagination.totalCount > 0 ? (pagination.page - 1) * pagination.limit + 1 : 0;
+  const endItem = Math.min(pagination.page * pagination.limit, pagination.totalCount);
 
-    let matchDate = true;
-    if (d.createdAt) {
-      const logTime = new Date(d.createdAt).getTime();
-      if (startDate) {
-        const start = new Date(startDate).setHours(0, 0, 0, 0);
-        if (logTime < start) matchDate = false;
-      }
-      if (endDate) {
-        const end = new Date(endDate).setHours(23, 59, 59, 999);
-        if (logTime > end) matchDate = false;
-      }
+  // Sayfalama buton aralığı hesabı
+  const getPageNumbers = () => {
+    const total = pagination.totalPages || 1;
+    const current = page;
+    const pages = [];
+
+    let start = Math.max(1, current - 2);
+    let end = Math.min(total, current + 2);
+
+    if (current <= 3) {
+      end = Math.min(total, 5);
+    }
+    if (current >= total - 2) {
+      start = Math.max(1, total - 4);
     }
 
-    return matchSearch && matchLoc && matchProc && matchDate;
-  });
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', animation: 'fadeIn 0.4s ease' }}>
@@ -143,19 +183,19 @@ const AuditLogsPage = () => {
       <div className="page-header">
         <div>
           <h2 className="page-title">Audit Logs</h2>
-          <p className="page-subtitle">Sistem işlem kayıtları (En yeni işlemler en başta)</p>
+          <p className="page-subtitle">Sistem işlem kayıtları (Sayfa 1'de en yeni işlemler tutulur)</p>
         </div>
-        <button className="btn-secondary" onClick={load} style={{ padding: '10px 16px', fontSize: '13px' }}>
+        <button className="btn-secondary" onClick={() => load(page)} style={{ padding: '10px 16px', fontSize: '13px' }}>
           <RefreshCw size={14} /> Yenile
         </button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px' }}>
         {[
-          { label: 'Toplam Log', value: data.length, color: '#6366f1', bg: 'rgba(99,102,241,0.1)' },
-          { label: 'POST İşlemleri', value: data.filter(d => d.proc_type === 'POST').length, color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
-          { label: 'DELETE İşlemleri', value: data.filter(d => d.proc_type === 'DELETE').length, color: '#ef4444', bg: 'rgba(239,68,68,0.1)' },
-          { label: 'Giriş İşlemleri', value: data.filter(d => d.proc_type === 'LOGIN').length, color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
+          { label: 'Toplam Log', value: stats.total || pagination.totalCount, color: '#6366f1' },
+          { label: 'POST İşlemleri', value: stats.post || 0, color: '#10b981' },
+          { label: 'DELETE İşlemleri', value: stats.delete || 0, color: '#ef4444' },
+          { label: 'Giriş İşlemleri', value: stats.login || 0, color: '#f59e0b' },
         ].map(s => (
           <div key={s.label} className="card" style={{ padding: '16px 20px' }}>
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>{s.label}</p>
@@ -173,7 +213,7 @@ const AuditLogsPage = () => {
             <input
               placeholder="Log, e-posta ara..."
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={e => handleFilterChange(setSearch, e.target.value)}
               style={{ background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-primary)', fontSize: '13px', width: '100%' }}
             />
           </div>
@@ -181,7 +221,7 @@ const AuditLogsPage = () => {
           {/* Modül Seçimi */}
           <select
             value={filterLocation}
-            onChange={e => setFilterLocation(e.target.value)}
+            onChange={e => handleFilterChange(setFilterLocation, e.target.value)}
             style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)', padding: '8px 12px', borderRadius: '8px', fontSize: '13px', outline: 'none', cursor: 'pointer' }}
           >
             <option value="">Tüm Modüller</option>
@@ -191,7 +231,7 @@ const AuditLogsPage = () => {
           {/* İşlem Türü Seçimi */}
           <select
             value={filterProc}
-            onChange={e => setFilterProc(e.target.value)}
+            onChange={e => handleFilterChange(setFilterProc, e.target.value)}
             style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)', padding: '8px 12px', borderRadius: '8px', fontSize: '13px', outline: 'none', cursor: 'pointer' }}
           >
             <option value="">Tüm İşlemler</option>
@@ -218,7 +258,7 @@ const AuditLogsPage = () => {
             <input
               type="date"
               value={startDate}
-              onChange={e => { setStartDate(e.target.value); setDateRangePreset('custom'); }}
+              onChange={e => { handleFilterChange(setStartDate, e.target.value); setDateRangePreset('custom'); }}
               title="Başlangıç Tarihi"
               style={{ background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-primary)', fontSize: '12px', cursor: 'pointer' }}
             />
@@ -226,7 +266,7 @@ const AuditLogsPage = () => {
             <input
               type="date"
               value={endDate}
-              onChange={e => { setEndDate(e.target.value); setDateRangePreset('custom'); }}
+              onChange={e => { handleFilterChange(setEndDate, e.target.value); setDateRangePreset('custom'); }}
               title="Bitiş Tarihi"
               style={{ background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-primary)', fontSize: '12px', cursor: 'pointer' }}
             />
@@ -247,7 +287,7 @@ const AuditLogsPage = () => {
           <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}>
             <div className="spinner" />
           </div>
-        ) : filtered.length === 0 ? (
+        ) : data.length === 0 ? (
           <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
             <ClipboardList size={48} style={{ opacity: 0.3, marginBottom: '12px' }} />
             <p>Seçilen kriterlere uygun log kaydı bulunamadı.</p>
@@ -267,7 +307,7 @@ const AuditLogsPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((item) => {
+                {data.map((item) => {
                   const lvl = LEVEL_BADGE[item.level] || { cls: 'badge-info', label: item.level };
                   const pColor = PROC_COLORS[item.proc_type] || '#6366f1';
                   return (
@@ -303,9 +343,72 @@ const AuditLogsPage = () => {
           </div>
         )}
 
-        <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-muted)' }}>
-          <span>Toplam {data.length} kayıt</span>
-          <span>Gösterilen: {filtered.length}</span>
+        {/* Sayfalama Barı */}
+        <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', fontSize: '13px', color: 'var(--text-muted)' }}>
+          <div>
+            Toplam <strong style={{ color: 'var(--text-primary)' }}>{pagination.totalCount}</strong> kayıttan <strong style={{ color: 'var(--text-primary)' }}>{startItem}-{endItem}</strong> arası gösteriliyor
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <button
+              className="btn-icon"
+              disabled={page <= 1}
+              onClick={() => setPage(1)}
+              title="İlk Sayfa"
+              style={{ opacity: page <= 1 ? 0.4 : 1, cursor: page <= 1 ? 'not-allowed' : 'pointer' }}
+            >
+              <ChevronsLeft size={16} />
+            </button>
+            <button
+              className="btn-icon"
+              disabled={page <= 1}
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              title="Önceki Sayfa"
+              style={{ opacity: page <= 1 ? 0.4 : 1, cursor: page <= 1 ? 'not-allowed' : 'pointer' }}
+            >
+              <ChevronLeft size={16} />
+            </button>
+
+            {getPageNumbers().map(pNum => (
+              <button
+                key={pNum}
+                onClick={() => setPage(pNum)}
+                style={{
+                  minWidth: '32px',
+                  height: '32px',
+                  borderRadius: '6px',
+                  border: pNum === page ? '1px solid var(--accent-primary)' : '1px solid var(--border)',
+                  background: pNum === page ? 'var(--accent-primary)' : 'var(--bg-secondary)',
+                  color: pNum === page ? '#fff' : 'var(--text-primary)',
+                  fontWeight: pNum === page ? '700' : '500',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                {pNum}
+              </button>
+            ))}
+
+            <button
+              className="btn-icon"
+              disabled={page >= pagination.totalPages}
+              onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
+              title="Sonraki Sayfa"
+              style={{ opacity: page >= pagination.totalPages ? 0.4 : 1, cursor: page >= pagination.totalPages ? 'not-allowed' : 'pointer' }}
+            >
+              <ChevronRight size={16} />
+            </button>
+            <button
+              className="btn-icon"
+              disabled={page >= pagination.totalPages}
+              onClick={() => setPage(pagination.totalPages)}
+              title="Son Sayfa"
+              style={{ opacity: page >= pagination.totalPages ? 0.4 : 1, cursor: page >= pagination.totalPages ? 'not-allowed' : 'pointer' }}
+            >
+              <ChevronsRight size={16} />
+            </button>
+          </div>
         </div>
       </div>
 

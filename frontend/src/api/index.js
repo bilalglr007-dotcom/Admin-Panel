@@ -53,7 +53,7 @@ export const profileAPI = {
 export const usersAPI = {
   getAll: () => request('GET', '/users'),
   getById: (id) => request('GET', `/users/${id}`),
-  create: (body) => request('POST', '/users', body),
+  create: (body) => request('POST', '/users'),
   update: (id, body) => request('PUT', `/users/${id}`, body),
   delete: (id) => request('DELETE', `/users/${id}`),
 };
@@ -88,7 +88,16 @@ export const rolePrivilegesAPI = {
 };
 
 export const auditLogsAPI = {
-  getAll: () => request('GET', '/audit-logs'),
+  getAll: (params = {}) => {
+    const query = new URLSearchParams();
+    Object.keys(params).forEach((key) => {
+      if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
+        query.append(key, params[key]);
+      }
+    });
+    const queryString = query.toString() ? `?${query.toString()}` : '';
+    return request('GET', `/audit-logs${queryString}`);
+  },
   getById: (id) => request('GET', `/audit-logs/${id}`),
   delete: (id) => request('DELETE', `/audit-logs/${id}`),
 };

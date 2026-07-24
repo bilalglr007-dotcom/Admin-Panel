@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+
 const rolesSchema = new mongoose.Schema
 ({
     role_name:{
@@ -17,6 +18,9 @@ const rolesSchema = new mongoose.Schema
 }, {
     timestamps: true, 
     versionKey: false
-})
-const Roles = mongoose.model('Roles',rolesSchema)
-export default Roles
+});
+
+rolesSchema.index({ is_active: 1 });
+
+const Roles = mongoose.model('Roles', rolesSchema);
+export default Roles;

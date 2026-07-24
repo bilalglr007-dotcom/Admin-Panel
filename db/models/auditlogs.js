@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+
 const auditlogs = new mongoose.Schema
 ({
     level:{
@@ -19,6 +20,10 @@ const auditlogs = new mongoose.Schema
    }, {
     timestamps: true,
     versionKey: false
-})
-const Audit_Logs = mongoose.model('Audit_Logs',auditlogs)
-export default Audit_Logs
+});
+
+auditlogs.index({ createdAt: -1 });
+auditlogs.index({ location: 1, proc_type: 1 });
+
+const Audit_Logs = mongoose.model('Audit_Logs', auditlogs);
+export default Audit_Logs;

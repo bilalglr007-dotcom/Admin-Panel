@@ -1,59 +1,14 @@
-import Audit from '../lib/audit.js';
-import UserRoles from '../db/models/userRoles.js';
 import express from 'express';
+import userRoleController from '../controllers/UserRoleController.js';
 import { authenticateToken, checkRole } from '../middlewares/authMiddleware.js';
 import { cacheMiddleware, invalidateCache } from '../middlewares/cacheMiddleware.js';
 
 const router = express.Router();
 
-router.post('/', authenticateToken, checkRole('SUPER_ADMIN'), invalidateCache(['user-roles:*', 'auditlogs:*']), async (req, res, next) => {
-  try {
-    const addUserRoles = await UserRoles.create(req.body);
-    await Audit.log({ level: 'INFO', email: req.user.email, location: 'USER_ROLES', proc_type: 'POST', log: `Yeni Kullanıcı-Rol İlişkisi Tanımlandı -> User ID: ${addUserRoles.user_id}, Role ID: ${addUserRoles.role_id}` });
-    res.status(201).json({ success: true, data: addUserRoles });
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.get('/', authenticateToken, cacheMiddleware('user-roles'), async (req, res, next) => {
-  try {
-    const findUserRoles = await UserRoles.find();
-    res.status(200).json({ success: true, data: findUserRoles });
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.get('/:id', authenticateToken, cacheMiddleware('user-roles'), async (req, res, next) => {
-  try {
-    const userRolesByDetail = await UserRoles.findById(req.params.id);
-    res.status(200).json({ success: true, data: userRolesByDetail });
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.put('/:id', authenticateToken, checkRole('SUPER_ADMIN'), invalidateCache(['user-roles:*', 'auditlogs:*']), async (req, res, next) => {
-  try {
-    const currentUserRoles = await UserRoles.findById(req.params.id);
-    const userRolesUpdate = await UserRoles.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
-    const updatedFields = Object.keys(req.body).join(', ');
-    await Audit.log({ level: 'INFO', email: req.user.email, location: 'USER_ROLES', proc_type: 'PUT', log: `Kullanıcı-Rol İlişkisinin Şu Alanları Güncellendi: ${updatedFields}` });
-    res.status(200).json({ success: true, data: userRolesUpdate });
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.delete('/:id', authenticateToken, checkRole('SUPER_ADMIN'), invalidateCache(['user-roles:*', 'auditlogs:*']), async (req, res, next) => {
-  try {
-    const userRolesDelete = await UserRoles.findByIdAndDelete(req.params.id);
-    await Audit.log({ level: 'INFO', email: req.user.email, location: 'USER_ROLES', proc_type: 'DELETE', log: `Kullanıcı-Rol İlişkisi Silindi! (User ID: ${userRolesDelete?.user_id || req.params.id})` });
-    res.status(200).json({ success: true, message: 'Kullanıcı Rol İlişkisi Başarıyla Silindi' });
-  } catch (err) {
-    next(err);
-  }
-});
+router.post('/', authenticateToken, checkRole('SUPER_ADMIN'), invalidateCache(['user-roles:*', 'auditlogs:*']), userRoleController.createUserRole);
+router.get('/', authenticateToken, cacheMiddleware('user-roles'), userRoleController.getAllUserRoles);
+router.get('/:id', authenticateToken, cacheMiddleware('user-roles'), userRoleController.getUserRoleById);
+router.put('/:id', authenticateToken, checkRole('SUPER_ADMIN'), invalidateCache(['user-roles:*', 'auditlogs:*']), userRoleController.updateUserRole);
+router.delete('/:id', authenticateToken, checkRole('SUPER_ADMIN'), invalidateCache(['user-roles:*', 'auditlogs:*']), userRoleController.deleteUserRole);
 
 export default router;

@@ -24,8 +24,14 @@ export const AuthProvider = ({ children }) => {
             setUser(freshData.data);
             localStorage.setItem('user', JSON.stringify(freshData.data));
           }
-        } catch {
-          // Token geçersizse veya bağlantı hatası varsa sessiz kal
+        } catch (err) {
+          // Token süresi dolmuşsa veya geçersizse oturumu temizle
+          if (err?.message?.includes('401') || err?.message?.includes('403') || err?.message?.includes('geçersiz') || err?.message?.includes('Token')) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            setToken(null);
+            setUser(null);
+          }
         }
       }
       setLoading(false);

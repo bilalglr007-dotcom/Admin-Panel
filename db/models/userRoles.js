@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+
 const usersRolesSchema = new mongoose.Schema
 ({
     role_id:{
@@ -12,7 +13,10 @@ const usersRolesSchema = new mongoose.Schema
    }, {
     timestamps: true,
     versionKey: false  
-})
-const User_Roles = mongoose.model('UserRoles',usersRolesSchema)
-export default User_Roles
+});
 
+usersRolesSchema.index({ user_id: 1, role_id: 1 });
+usersRolesSchema.index({ user_id: 1 });
+
+const User_Roles = mongoose.model('UserRoles', usersRolesSchema);
+export default User_Roles;
