@@ -15,10 +15,29 @@ const request = async (method, endpoint, body = null) => {
   };
   if (body) options.body = JSON.stringify(body);
 
-  const res = await fetch(`${BASE_URL}${endpoint}`, options);
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || data.error?.message || 'İstek başarısız oldu');
-  return data;
+  let res;
+  try {
+    res = await fetch(`${BASE_URL}${endpoint}`, options);
+  } catch (err) {
+    throw new Error('Sunucuya bağlanılamadı. Lütfen sunucunun açık olduğundan emin olun.');
+  }
+
+  const text = await res.text();
+  let data = null;
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { message: text };
+    }
+  }
+
+  if (!res.ok) {
+    const errorMsg = data?.message || data?.error?.message || `İstek başarısız oldu (${res.status})`;
+    throw new Error(errorMsg);
+  }
+
+  return data || {};
 };
 
 export const authAPI = {
