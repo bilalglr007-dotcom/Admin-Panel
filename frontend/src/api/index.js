@@ -40,6 +40,10 @@ const request = async (method, endpoint, body = null) => {
   return data || {};
 };
 
+export const publicStatsAPI = {
+  get: () => request('GET', '/public-stats'),
+};
+
 export const authAPI = {
   login: (body) => request('POST', '/auth/login', body),
   register: (body) => request('POST', '/auth/register', body),

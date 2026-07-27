@@ -22,7 +22,9 @@ export const cacheMiddleware = (keyPrefix, ttl = 300) => {
 
       res.json = (body) => {
         if (res.statusCode >= 200 && res.statusCode < 300 && body && body.success !== false) {
-          CacheService.set(cacheKey, body, ttl);
+          CacheService.set(cacheKey, body, ttl).catch(err => {
+            console.error('Cache set hatası:', err.message);
+          });
         }
         return originalJson(body);
       };
@@ -36,15 +38,14 @@ export const cacheMiddleware = (keyPrefix, ttl = 300) => {
 };
 
 export const invalidateCache = (patterns) => {
-  return async (req, res, next) => {
+  return (req, res, next) => {
     const originalJson = res.json.bind(res);
 
-    res.json = async (body) => {
+    res.json = (body) => {
       if (res.statusCode >= 200 && res.statusCode < 300 && body && body.success !== false) {
         const patternList = Array.isArray(patterns) ? patterns : [patterns];
-        for (const pattern of patternList) {
-          await CacheService.clearPattern(pattern);
-        }
+        Promise.all(patternList.map(pattern => CacheService.clearPattern(pattern)))
+          .catch(err => console.error('Cache invalidation hatası:', err.message));
       }
       return originalJson(body);
     };

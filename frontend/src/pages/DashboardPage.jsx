@@ -16,6 +16,14 @@ const DAYS_TR   = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
 
 const PIE_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#3b82f6', '#8b5cf6', '#06b6d4'];
 
+function getLocalDateStr(date) {
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function buildMonthlyBuckets(n = 9) {
   const now = new Date();
   return Array.from({ length: n }, (_, i) => {
@@ -38,7 +46,7 @@ function buildWeeklyBuckets() {
     d.setDate(d.getDate() - (6 - i));
     return {
       label: DAYS_TR[d.getDay()],
-      dateStr: d.toISOString().slice(0, 10),
+      dateStr: getLocalDateStr(d),
       yazma: 0,
       auth: 0,
       toplam: 0,
@@ -64,7 +72,7 @@ function buildChartData(logs, mode) {
   } else {
     const buckets = buildWeeklyBuckets();
     logs.forEach(log => {
-      const dateStr = new Date(log.createdAt).toISOString().slice(0, 10);
+      const dateStr = getLocalDateStr(log.createdAt);
       const bucket = buckets.find(b => b.dateStr === dateStr);
       if (!bucket) return;
       bucket.toplam++;
@@ -178,21 +186,15 @@ const DashboardPage = () => {
     ? Math.round(((thisMonthLogs - lastMonthLogs) / lastMonthLogs) * 100)
     : thisMonthLogs > 0 ? 100 : 0;
 
-  const load = useCallback(async (retryCount = 0) => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const [usersRes, rolesRes, catsRes, logsRes] = await Promise.allSettled([
         usersAPI.getAll(),
         rolesAPI.getAll(),
         categoriesAPI.getAll(),
-        auditLogsAPI.getAll(),
+        auditLogsAPI.getAll({ all: true }),
       ]);
-
-      const isAnyRejected = [usersRes, rolesRes, catsRes, logsRes].some(r => r.status === 'rejected');
-      if (isAnyRejected && retryCount < 2) {
-        setTimeout(() => load(retryCount + 1), 300);
-        return;
-      }
 
       const users = usersRes.status === 'fulfilled' ? usersRes.value.data?.length || 0 : 0;
       const roles = rolesRes.status === 'fulfilled' ? rolesRes.value.data?.length || 0 : 0;

@@ -12,9 +12,7 @@ class AuditLogController {
 
   async getAllAuditLogs(req, res, next) {
     try {
-      const page = parseInt(req.query.page, 10) || 1;
-      const limit = parseInt(req.query.limit, 10) || 10;
-      const { search, location, proc_type, startDate, endDate } = req.query;
+      const { search, location, proc_type, startDate, endDate, all } = req.query;
 
       const filter = {};
 
@@ -42,15 +40,31 @@ class AuditLogController {
         }
       }
 
-      const result = await auditLogRepository.findPaginated({ page, limit, filter });
-      const stats = await auditLogRepository.getStats();
+      const isUnpaginated = all === 'true' || (!req.query.page && !req.query.limit);
 
-      res.status(200).json({
-        success: true,
-        data: result.data,
-        pagination: result.pagination,
-        stats
-      });
+      if (isUnpaginated) {
+        const data = await auditLogRepository.findAllFiltered(filter);
+        const stats = await auditLogRepository.getStats();
+
+        return res.status(200).json({
+          success: true,
+          data,
+          stats
+        });
+      } else {
+        const page = parseInt(req.query.page, 10) || 1;
+        const limit = parseInt(req.query.limit, 10) || 10;
+
+        const result = await auditLogRepository.findPaginated({ page, limit, filter });
+        const stats = await auditLogRepository.getStats();
+
+        return res.status(200).json({
+          success: true,
+          data: result.data,
+          pagination: result.pagination,
+          stats
+        });
+      }
     } catch (err) {
       next(err);
     }

@@ -40,6 +40,10 @@ class AuditLogRepository {
     return { total, post, delete: deleteCount, login };
   }
 
+  async findAllFiltered(filter = {}) {
+    return await AuditLogs.find(filter).sort({ createdAt: -1 }).lean();
+  }
+
   async findAllSortedByDateDesc() {
     return await AuditLogs.find().sort({ createdAt: -1 }).lean();
   }

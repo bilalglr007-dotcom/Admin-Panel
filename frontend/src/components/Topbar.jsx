@@ -81,7 +81,7 @@ const Topbar = ({ collapsed, setCollapsed, title }) => {
   // Son Audit Loglarını Bildirimler İçin Çekme
   const fetchNotifications = async () => {
     try {
-      const res = await auditLogsAPI.getAll();
+      const res = await auditLogsAPI.getAll({ limit: 8 });
       const logs = res.data || [];
       const recent = logs.slice(0, 8);
       setNotifications(recent);
